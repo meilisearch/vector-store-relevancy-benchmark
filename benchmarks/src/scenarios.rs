@@ -61,6 +61,11 @@ pub enum ScenarioContender {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Sequence)]
 pub enum ScenarioDistance {
     Cosine,
+    BqCosine,
+    Euclidean,
+    BqEuclidean,
+    Manhattan,
+    BqManhattan,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Sequence)]

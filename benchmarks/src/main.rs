@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::Write as _;
 
-use arroy::distances::Cosine;
+use arroy::distances::{
+    BinaryQuantizedCosine, BinaryQuantizedEuclidean, BinaryQuantizedManhattan, Cosine, Euclidean,
+    Manhattan,
+};
 use benchmarks::scenarios::ScenarioSearch;
 use benchmarks::{arroy_bench, scenarios, MatLEView, RNG_SEED};
 use byte_unit::Byte;
@@ -176,8 +179,25 @@ fn main() {
                 .map(|_| points.choose(&mut rng).unwrap())
                 .map(|(id, target)| {
                     let mut points = points.clone();
-                    points.par_sort_unstable_by_key(|(_, v)| {
-                        OrderedFloat(benchmarks::distance::<Cosine>(target, v))
+                    points.par_sort_unstable_by_key(|(_, v)| match distance {
+                        scenarios::ScenarioDistance::Cosine => {
+                            OrderedFloat(benchmarks::distance::<Cosine>(target, v))
+                        }
+                        scenarios::ScenarioDistance::BqCosine => {
+                            OrderedFloat(benchmarks::distance::<BinaryQuantizedCosine>(target, v))
+                        }
+                        scenarios::ScenarioDistance::Euclidean => {
+                            OrderedFloat(benchmarks::distance::<Euclidean>(target, v))
+                        }
+                        scenarios::ScenarioDistance::BqEuclidean => OrderedFloat(
+                            benchmarks::distance::<BinaryQuantizedEuclidean>(target, v),
+                        ),
+                        scenarios::ScenarioDistance::Manhattan => {
+                            OrderedFloat(benchmarks::distance::<Manhattan>(target, v))
+                        }
+                        scenarios::ScenarioDistance::BqManhattan => OrderedFloat(
+                            benchmarks::distance::<BinaryQuantizedManhattan>(target, v),
+                        ),
                     });
 
                     // We collect the different filtered versions here.
@@ -217,32 +237,45 @@ fn main() {
         };
         println!("Starting indexing process");
 
-        for number_of_chunks in &number_of_chunks {
+        // macro simplifying benchmark execution depending on distance type
+        macro_rules! run {
+            ($D: ty, $n: expr) => {
+                arroy_bench::prepare_and_run::<$D, _>(
+                    &points,
+                    nb_trees,
+                    $n,
+                    sleep_between_chunks,
+                    memory,
+                    verbose,
+                    |time_to_index, env, database| {
+                        arroy_bench::run_scenarios(
+                            env,
+                            time_to_index,
+                            distance,
+                            $n,
+                            &search,
+                            &queries,
+                            &recall_tested,
+                            database,
+                        );
+                    },
+                )
+            };
+        }
+
+        for &n in &number_of_chunks {
             match contender {
+                // qdrant
                 scenarios::ScenarioContender::Qdrant => println!("Qdrant is not supported yet"),
+
+                // arroy
                 scenarios::ScenarioContender::Arroy => match distance {
-                    scenarios::ScenarioDistance::Cosine => {
-                        arroy_bench::prepare_and_run::<Cosine, _>(
-                            &points,
-                            nb_trees,
-                            *number_of_chunks,
-                            sleep_between_chunks,
-                            memory,
-                            verbose,
-                            |time_to_index, env, database| {
-                                arroy_bench::run_scenarios(
-                                    env,
-                                    time_to_index,
-                                    distance,
-                                    *number_of_chunks,
-                                    &search,
-                                    &queries,
-                                    &recall_tested,
-                                    database,
-                                );
-                            },
-                        )
-                    }
+                    scenarios::ScenarioDistance::Cosine => run!(Cosine, n),
+                    scenarios::ScenarioDistance::BqCosine => run!(BinaryQuantizedCosine, n),
+                    scenarios::ScenarioDistance::Euclidean => run!(Euclidean, n),
+                    scenarios::ScenarioDistance::BqEuclidean => run!(BinaryQuantizedEuclidean, n),
+                    scenarios::ScenarioDistance::Manhattan => run!(Manhattan, n),
+                    scenarios::ScenarioDistance::BqManhattan => run!(BinaryQuantizedManhattan, n),
                 },
             }
         }

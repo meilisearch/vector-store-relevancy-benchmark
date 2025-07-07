@@ -41,8 +41,8 @@ struct Args {
     filterings: Vec<scenarios::ScenarioFiltering>,
 
     /// The list of recall to be tested.
-    #[arg(long, default_value_t = String::from("1,10,20,50,100,500"))]
-    recall_tested: String,
+    #[arg(long, value_delimiter = ',', default_value = "1,10,20,50,100,500")]
+    recall_tested: Vec<usize>,
 
     /// Number of vectors to evaluate from the datasets.
     #[arg(long, default_value_t = 10_000, value_parser = parse_number_with_underscores)]
@@ -119,16 +119,6 @@ fn main() {
     let distances = set_or_all::<_, scenarios::ScenarioDistance>(distances);
     let over_samplings = set_or_all::<_, scenarios::ScenarioOversampling>(over_samplings);
     let filterings = set_or_all::<_, scenarios::ScenarioFiltering>(filterings);
-    let recall_tested: Vec<usize> = recall_tested
-        .split(',')
-        .enumerate()
-        .filter(|(_, n)| !n.trim().is_empty())
-        .map(|(i, n)| {
-            n.trim()
-                .parse()
-                .unwrap_or_else(|_| panic!("Could not parse recall value `{n}` at index `{i}`."))
-        })
-        .collect();
 
     let scenaris: Vec<_> = iproduct!(datasets, distances, contenders, over_samplings, filterings)
         .map(|(dataset, distance, contender, oversampling, filtering)| {

@@ -25,19 +25,19 @@ fn parse_number_with_underscores(s: &str) -> Result<usize, std::num::ParseIntErr
 #[command(version, about, long_about = None)]
 struct Args {
     /// The datasets to run and all of them are ran if empty.
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_delimiter = ',')]
     datasets: Vec<scenarios::Dataset>,
 
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_delimiter = ',')]
     contenders: Vec<scenarios::ScenarioContender>,
 
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_delimiter = ',')]
     distances: Vec<scenarios::ScenarioDistance>,
 
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_delimiter = ',')]
     over_samplings: Vec<scenarios::ScenarioOversampling>,
 
-    #[arg(long, value_enum)]
+    #[arg(long, value_enum, value_delimiter = ',')]
     filterings: Vec<scenarios::ScenarioFiltering>,
 
     /// The list of recall to be tested.

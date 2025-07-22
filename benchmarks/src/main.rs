@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::fmt::Write as _;
 
-use arroy::distances::Cosine;
+use arroy::distances::Cosine as ACosine;
 use benchmarks::scenarios::ScenarioSearch;
-use benchmarks::{arroy_bench, scenarios, MatLEView, RNG_SEED};
+use benchmarks::{arroy_bench, hannoy_bench, scenarios, MatLEView, RNG_SEED};
 use byte_unit::Byte;
 use clap::Parser;
 use enum_iterator::Sequence;
+use hannoy::distances::Cosine as HCosine;
 use itertools::{iproduct, Itertools};
 use ordered_float::OrderedFloat;
 use rand::rngs::StdRng;
@@ -52,6 +53,11 @@ struct Args {
     #[arg(long)]
     nb_trees: Option<usize>,
 
+    /// Controls how many neighbours to search per layer per node when inserting a new item, larger
+    /// implies longer builds (approx. linearly)
+    #[arg(long, default_value_t = 64)]
+    ef_construction: usize,
+
     /// These numbers correspond to the numbers of chunks that the dataset will be split into for indexing.
     ///
     /// Each number corresponds to a new indexation in x chunks. Use a comma to separate multiple features.
@@ -83,6 +89,7 @@ fn main() {
         datasets,
         count,
         nb_trees,
+        ef_construction,
         number_of_chunks,
         contenders,
         distances,
@@ -177,7 +184,7 @@ fn main() {
                 .map(|(id, target)| {
                     let mut points = points.clone();
                     points.par_sort_unstable_by_key(|(_, v)| {
-                        OrderedFloat(benchmarks::distance::<Cosine>(target, v))
+                        OrderedFloat(benchmarks::distance::<ACosine>(target, v))
                     });
 
                     // We collect the different filtered versions here.
@@ -222,7 +229,7 @@ fn main() {
                 scenarios::ScenarioContender::Qdrant => println!("Qdrant is not supported yet"),
                 scenarios::ScenarioContender::Arroy => match distance {
                     scenarios::ScenarioDistance::Cosine => {
-                        arroy_bench::prepare_and_run::<Cosine, _>(
+                        arroy_bench::prepare_and_run::<ACosine, _>(
                             &points,
                             nb_trees,
                             *number_of_chunks,
@@ -244,6 +251,28 @@ fn main() {
                         )
                     }
                 },
+                scenarios::ScenarioContender::Hannoy => {
+                    hannoy_bench::prepare_and_run::<HCosine, _>(
+                        &points,
+                        ef_construction,
+                        *number_of_chunks,
+                        sleep_between_chunks,
+                        memory,
+                        verbose,
+                        |time_to_index, env, database| {
+                            hannoy_bench::run_scenarios(
+                                env,
+                                time_to_index,
+                                distance,
+                                *number_of_chunks,
+                                &search,
+                                &queries,
+                                &recall_tested,
+                                database,
+                            );
+                        },
+                    )
+                }
             }
         }
 

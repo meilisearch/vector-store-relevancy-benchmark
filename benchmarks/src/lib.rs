@@ -2,7 +2,7 @@
 
 pub mod arroy_bench;
 mod dataset;
-mod hannoy_bench;
+pub mod hannoy_bench;
 mod qdrant_bench;
 pub mod scenarios;
 

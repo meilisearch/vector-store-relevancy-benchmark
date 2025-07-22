@@ -18,6 +18,7 @@ const TWENTY_HUNDRED_MIB: usize = 2000 * 1024 * 1024 * 1024;
 
 pub fn prepare_and_run<D, F>(
     points: &[(u32, &[f32])],
+    ef_construction: usize,
     number_of_chunks: usize,
     sleep_between_chunks: usize,
     memory: usize,
@@ -46,6 +47,7 @@ pub fn prepare_and_run<D, F>(
         dimensions,
         memory,
         points,
+        ef_construction,
         number_of_chunks,
         sleep_between_chunks,
         verbose,
@@ -77,17 +79,18 @@ pub fn run_scenarios<D: Distance>(
         for &number_fetched in recall_tested {
             let (correctly_retrieved, duration) = queries
                 .par_iter()
-                .map(|(&id, _target, relevants)| {
+                .map(|(&id, target, relevants)| {
                     let rtxn = env.read_txn().unwrap();
                     let reader = hannoy::Reader::open(&rtxn, 0, database).unwrap();
 
                     let (candidates, relevants) = &relevants[filtering];
                     // Only keep the top number fetched documents.
+                    // TODO: add filtering with `candidates`
                     let relevants = relevants.get(..number_fetched).unwrap_or(relevants);
 
                     let now = std::time::Instant::now();
                     let mut nns = reader.nns(number_fetched, number_fetched);
-                    let hannoy_answer = nns.by_item(&rtxn, id).unwrap().unwrap();
+                    let hannoy_answer = nns.by_vector(&rtxn, target).unwrap();
                     let elapsed = now.elapsed();
 
                     let mut correctly_retrieved = Some(0);
@@ -137,6 +140,7 @@ fn load_into_hannoy<D: hannoy::Distance>(
     dimensions: usize,
     memory: usize,
     points: &[(ItemId, &[f32])],
+    ef_construction: usize,
     number_of_chunks: usize,
     sleep_between_chunks: usize,
     verbose: bool,

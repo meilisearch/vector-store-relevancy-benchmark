@@ -56,6 +56,7 @@ pub enum ScenarioContender {
     Qdrant,
     Arroy,
     // Typesense,
+    Hannoy,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Sequence)]

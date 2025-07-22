@@ -5,3 +5,6 @@ resolver = "2"
 
 # [profile.release]
 # debug = true
+
+# [patch.crates-io]
+hashbrown = { git = "https://github.com/rust-lang/hashbrown", tag = "0.15.2" }

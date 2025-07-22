@@ -14,6 +14,7 @@ clap = { version = "4.5.18", features = ["derive"] }
 enum-iterator = "2.1.0"
 fast-distances = "0.0.1"
 futures-util = "0.3.30"
+hannoy = {path = "../../hannoy" }
 heed = "0.22.0"
 itertools = "0.13.0"
 memmap2 = "0.9.4"

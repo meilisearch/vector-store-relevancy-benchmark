@@ -2,6 +2,7 @@
 
 pub mod arroy_bench;
 mod dataset;
+mod hannoy_bench;
 mod qdrant_bench;
 pub mod scenarios;
 
@@ -93,7 +94,7 @@ pub struct IndexingMetrics {
     build_durations: Vec<(Instant, Instant)>,
     nb_vectors: Vec<usize>,
     database_size: Vec<usize>,
-    nb_trees: Vec<usize>,
+    nb_trees: Option<Vec<usize>>,
 }
 
 impl IndexingMetrics {
@@ -105,7 +106,7 @@ impl IndexingMetrics {
             build_durations: Vec::new(),
             nb_vectors: Vec::new(),
             database_size: Vec::new(),
-            nb_trees: Vec::new(),
+            nb_trees: Some(Vec::new()),
         }
     }
 
@@ -133,7 +134,10 @@ impl IndexingMetrics {
         self.database_size.push(size);
     }
     pub fn new_nb_trees(&mut self, nb_trees: usize) {
-        self.nb_trees.push(nb_trees);
+        match self.nb_trees.as_mut() {
+            Some(nbt) => nbt.push(nb_trees),
+            None => self.nb_trees = Some(vec![nb_trees]),
+        }
     }
 
     pub fn end(&mut self) {
@@ -176,7 +180,11 @@ impl fmt::Display for IndexingMetrics {
                 format!("{:.2?}", build_end.duration_since(*build_start))
             })
             .collect::<Vec<_>>();
-        let trees = self.nb_trees.iter().map(|v| format!("{}", v)).collect::<Vec<_>>();
+        let trees = self
+            .nb_trees
+            .as_ref()
+            .map(|t| t.iter().map(|v| format!("{}", v)).collect::<Vec<_>>())
+            .unwrap_or(vec![]);
         let db_size = self
             .database_size
             .iter()
@@ -229,14 +237,17 @@ impl fmt::Display for IndexingMetrics {
         }
         writeln!(f, "")?;
 
-        write!(f, "  => Trees:      ")?;
-        for (idx, (nb_trees, max_length)) in trees.iter().zip(max_lengths.iter()).enumerate() {
-            if idx != 0 {
-                write!(f, ", ")?;
+        // if an arroy build, otherwise this is skipped
+        if trees.len() > 0 {
+            write!(f, "  => Trees:      ")?;
+            for (idx, (nb_trees, max_length)) in trees.iter().zip(max_lengths.iter()).enumerate() {
+                if idx != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{nb_trees:>max_length$}")?;
             }
-            write!(f, "{nb_trees:>max_length$}")?;
+            writeln!(f, "")?;
         }
-        writeln!(f, "")?;
 
         write!(f, "  => Db size:    ")?;
         for (idx, (database_size, max_length)) in db_size.iter().zip(max_lengths.iter()).enumerate()

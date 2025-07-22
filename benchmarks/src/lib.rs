@@ -210,8 +210,14 @@ impl fmt::Display for IndexingMetrics {
             })
             .collect::<Vec<_>>();
 
+        // If testing indexing in several chunks this pollutes the tty
+        #[allow(non_snake_case)]
+        let HOW_MANY: usize = vectors.len()  / 5;
+
         write!(f, "  => Vectors:    ")?;
-        for (idx, (nb_vectors, max_length)) in vectors.iter().zip(max_lengths.iter()).enumerate() {
+        for (idx, (nb_vectors, max_length)) in
+            vectors.iter().zip(max_lengths.iter()).enumerate().step_by(HOW_MANY)
+        {
             if idx != 0 {
                 write!(f, ", ")?;
             }
@@ -220,7 +226,7 @@ impl fmt::Display for IndexingMetrics {
         writeln!(f, "")?;
 
         write!(f, "  => Insertions: ")?;
-        for (idx, (insert, max_length)) in insertions.iter().zip(max_lengths.iter()).enumerate() {
+        for (idx, (insert, max_length)) in insertions.iter().zip(max_lengths.iter()).enumerate().step_by(HOW_MANY){
             if idx != 0 {
                 write!(f, ", ")?;
             }
@@ -229,7 +235,7 @@ impl fmt::Display for IndexingMetrics {
         writeln!(f, "")?;
 
         write!(f, "  => Builds:     ")?;
-        for (idx, (build, max_length)) in builds.iter().zip(max_lengths.iter()).enumerate() {
+        for (idx, (build, max_length)) in builds.iter().zip(max_lengths.iter()).enumerate().step_by(HOW_MANY){
             if idx != 0 {
                 write!(f, ", ")?;
             }
@@ -240,7 +246,7 @@ impl fmt::Display for IndexingMetrics {
         // if an arroy build, otherwise this is skipped
         if trees.len() > 0 {
             write!(f, "  => Trees:      ")?;
-            for (idx, (nb_trees, max_length)) in trees.iter().zip(max_lengths.iter()).enumerate() {
+            for (idx, (nb_trees, max_length)) in trees.iter().zip(max_lengths.iter()).enumerate().step_by(HOW_MANY){
                 if idx != 0 {
                     write!(f, ", ")?;
                 }
@@ -250,7 +256,7 @@ impl fmt::Display for IndexingMetrics {
         }
 
         write!(f, "  => Db size:    ")?;
-        for (idx, (database_size, max_length)) in db_size.iter().zip(max_lengths.iter()).enumerate()
+        for (idx, (database_size, max_length)) in db_size.iter().zip(max_lengths.iter()).enumerate().step_by(HOW_MANY)
         {
             if idx != 0 {
                 write!(f, ", ")?;

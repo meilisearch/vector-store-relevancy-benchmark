@@ -3,9 +3,9 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::time::Duration;
 
+use byte_unit::{Byte, UnitType};
 use hannoy::internals::{self, NodeCodec};
 use hannoy::{Database, Distance, ItemId, Writer};
-use byte_unit::{Byte, UnitType};
 use heed::EnvOpenOptions;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -89,7 +89,7 @@ pub fn run_scenarios<D: Distance>(
                     let relevants = relevants.get(..number_fetched).unwrap_or(relevants);
 
                     let now = std::time::Instant::now();
-                    let mut nns = reader.nns(number_fetched, number_fetched);
+                    let mut nns = reader.nns(number_fetched, 5 * number_fetched.min(100));
                     let hannoy_answer = nns.by_vector(&rtxn, target).unwrap();
                     let elapsed = now.elapsed();
 
@@ -116,7 +116,7 @@ pub fn run_scenarios<D: Distance>(
                     },
                 );
 
-            time_to_search += duration;
+            time_to_search += duration / (queries.len() as u32);
             // If non-candidate documents are returned we show a recall of -1
             let recall =
                 correctly_retrieved.map_or(-1.0, |cr| cr as f32 / (number_fetched as f32 * 100.0));
@@ -148,7 +148,7 @@ fn load_into_hannoy<D: hannoy::Distance>(
     let mut metrics = IndexingMetrics::new();
     let avg_chunk_size = points.len() / number_of_chunks;
     let mut nb_vectors = 0;
-    
+
     // FIXME: add back once WriterProgress defined
     // let (progress_sender, progress_receiver) = std::sync::mpsc::channel();
     if verbose {
@@ -176,7 +176,7 @@ fn load_into_hannoy<D: hannoy::Distance>(
             // builder.progress(|progress| progress_sender.send(progress).unwrap());
         }
         metrics.start_building();
-        builder.available_memory(memory).build::<16,32>(&mut wtxn).unwrap();
+        builder.available_memory(memory).build::<16, 32>(&mut wtxn).unwrap();
         metrics.end_building();
         wtxn.commit().unwrap();
 

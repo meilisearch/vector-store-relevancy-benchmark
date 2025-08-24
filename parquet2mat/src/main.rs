@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        println!("{} embeddings appended to the output.", embeddings_count);
+        println!("{embeddings_count} embeddings appended to the output.");
         total_embeddings_count += embeddings_count;
     }
 

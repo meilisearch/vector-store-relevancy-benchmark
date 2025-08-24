@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::sync::atomic::Ordering;
-use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::time::Duration;
 
 use byte_unit::{Byte, UnitType};
@@ -18,7 +16,6 @@ const TWENTY_HUNDRED_MIB: usize = 2000 * 1024 * 1024 * 1024;
 
 pub fn prepare_and_run<D, F>(
     points: &[(u32, &[f32])],
-    nb_trees: Option<usize>,
     number_of_chunks: usize,
     sleep_between_chunks: usize,
     memory: usize,
@@ -48,7 +45,6 @@ pub fn prepare_and_run<D, F>(
         memory,
         points,
         number_of_chunks,
-        nb_trees,
         sleep_between_chunks,
         verbose,
     );
@@ -143,7 +139,6 @@ fn load_into_hannoy<D: hannoy::Distance>(
     memory: usize,
     points: &[(ItemId, &[f32])],
     number_of_chunks: usize,
-    nb_trees: Option<usize>,
     sleep_between_chunks: usize,
     verbose: bool,
 ) -> IndexingMetrics {

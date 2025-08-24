@@ -143,7 +143,7 @@ pub fn measure_qdrant_distance<
     tokio::runtime::Runtime::new().unwrap().block_on(async {
         let ip = Ipv4Addr::from_str("127.0.0.1").unwrap();
         let port = 6334;
-        let url = format!("http://{}:{}/", ip, port);
+        let url = format!("http://{ip}:{port}/");
         let client = Qdrant::from_url(&url).timeout(Duration::from_secs(1800)).build().unwrap();
         let collection_name = "hello";
 

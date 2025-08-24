@@ -254,7 +254,6 @@ fn main() {
                             _,
                         >(
                             &points,
-                            nb_trees,
                             *number_of_chunks,
                             sleep_between_chunks,
                             memory,

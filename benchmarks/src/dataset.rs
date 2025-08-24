@@ -20,7 +20,7 @@ impl<T: AnyBitPattern> MatLEView<T> {
         let file = File::open(path).with_context(|| format!("while opening {path}")).unwrap();
         let mmap = unsafe { Mmap::map(&file).unwrap() };
 
-        assert!(mmap.len() != 0, "The file is empty");
+        assert!(!mmap.is_empty(), "The file is empty");
         assert!((mmap.len() / mem::size_of::<T>()) % dimensions == 0);
         MatLEView { name, mmap: Arc::new(mmap), dimensions, _marker: PhantomData }
     }

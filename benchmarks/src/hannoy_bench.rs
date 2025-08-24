@@ -88,7 +88,13 @@ pub fn run_scenarios<D: Distance>(
                     if let Some(candidates) = candidates.as_ref() {
                         nns.candidates(candidates);
                     }
-                    let arroy_answer = nns.by_item(&rtxn, id).unwrap().unwrap();
+                    let arroy_answer = nns
+                        .ef_search(
+                            number_fetched * 2 * oversampling.to_non_zero_usize().unwrap().get(),
+                        )
+                        .by_item(&rtxn, id)
+                        .unwrap()
+                        .unwrap();
                     let elapsed = now.elapsed();
 
                     let mut correctly_retrieved = Some(0);

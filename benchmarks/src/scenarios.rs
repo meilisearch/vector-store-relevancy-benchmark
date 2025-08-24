@@ -73,7 +73,7 @@ pub enum ScenarioOversampling {
 impl ScenarioOversampling {
     pub fn to_non_zero_usize(self) -> Option<NonZeroUsize> {
         match self {
-            ScenarioOversampling::X1 => None,
+            ScenarioOversampling::X1 => NonZeroUsize::new(1),
             ScenarioOversampling::X3 => NonZeroUsize::new(3),
         }
     }

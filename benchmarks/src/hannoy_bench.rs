@@ -89,7 +89,7 @@ pub fn run_scenarios<D: Distance>(
                     let relevants = relevants.get(..number_fetched).unwrap_or(relevants);
 
                     let now = std::time::Instant::now();
-                    let mut nns = reader.nns(number_fetched, 5 * number_fetched.min(100));
+                    let mut nns = reader.nns(number_fetched);
                     let hannoy_answer = nns.by_vector(&rtxn, target).unwrap();
                     let elapsed = now.elapsed();
 

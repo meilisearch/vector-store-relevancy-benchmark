@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::fmt::Write as _;
 
-use arroy::distances::Cosine;
 use benchmarks::scenarios::ScenarioSearch;
-use benchmarks::{arroy_bench, scenarios, MatLEView, RNG_SEED};
+use benchmarks::{arroy_bench, hannoy_bench, scenarios, MatLEView, RNG_SEED};
+use benchmarks::{Cosine, Distance};
 use byte_unit::Byte;
 use clap::Parser;
 use enum_iterator::Sequence;
@@ -98,7 +98,7 @@ fn main() {
     if verbose {
         // Initialize tracing with the specified level
         let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-            let filter = format!("arroy=debug,benchmarks=debug");
+            let filter = "arroy=debug,benchmarks=debug".to_string();
             EnvFilter::new(filter)
         });
 
@@ -224,28 +224,54 @@ fn main() {
                 match contender {
                     scenarios::ScenarioContender::Qdrant => println!("Qdrant is not supported yet"),
                     scenarios::ScenarioContender::Arroy => match distance {
-                        scenarios::ScenarioDistance::Cosine => {
-                            arroy_bench::prepare_and_run::<Cosine, _>(
-                                &points,
-                                nb_trees,
-                                *number_of_chunks,
-                                sleep_between_chunks,
-                                memory,
-                                verbose,
-                                |time_to_index, env, database| {
-                                    arroy_bench::run_scenarios(
-                                        env,
-                                        time_to_index,
-                                        distance,
-                                        *number_of_chunks,
-                                        &search,
-                                        &queries,
-                                        &recall_tested,
-                                        database,
-                                    );
-                                },
-                            )
-                        }
+                        scenarios::ScenarioDistance::Cosine => arroy_bench::prepare_and_run::<
+                            <benchmarks::Cosine as Distance>::ArroyDistance,
+                            _,
+                        >(
+                            &points,
+                            nb_trees,
+                            *number_of_chunks,
+                            sleep_between_chunks,
+                            memory,
+                            verbose,
+                            |time_to_index, env, database| {
+                                arroy_bench::run_scenarios(
+                                    env,
+                                    time_to_index,
+                                    distance,
+                                    *number_of_chunks,
+                                    &search,
+                                    &queries,
+                                    &recall_tested,
+                                    database,
+                                );
+                            },
+                        ),
+                    },
+                    scenarios::ScenarioContender::Hannoy => match distance {
+                        scenarios::ScenarioDistance::Cosine => hannoy_bench::prepare_and_run::<
+                            <benchmarks::Cosine as Distance>::HannoyDistance,
+                            _,
+                        >(
+                            &points,
+                            nb_trees,
+                            *number_of_chunks,
+                            sleep_between_chunks,
+                            memory,
+                            verbose,
+                            |time_to_index, env, database| {
+                                hannoy_bench::run_scenarios(
+                                    env,
+                                    time_to_index,
+                                    distance,
+                                    *number_of_chunks,
+                                    &search,
+                                    &queries,
+                                    &recall_tested,
+                                    database,
+                                );
+                            },
+                        ),
                     },
                 }
             }

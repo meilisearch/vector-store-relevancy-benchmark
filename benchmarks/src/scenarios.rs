@@ -55,6 +55,7 @@ impl From<Dataset> for MatLEView<f32> {
 pub enum ScenarioContender {
     Qdrant,
     Arroy,
+    Hannoy,
     // Typesense,
 }
 

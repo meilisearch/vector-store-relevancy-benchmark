@@ -2,13 +2,13 @@
 
 pub mod arroy_bench;
 mod dataset;
+pub mod hannoy_bench;
 mod qdrant_bench;
 pub mod scenarios;
 
 use std::fmt;
 use std::time::Instant;
 
-use arroy::distances::*;
 use byte_unit::rust_decimal::Decimal;
 use byte_unit::{Byte, Unit, UnitType};
 pub use dataset::*;
@@ -21,6 +21,7 @@ pub trait Distance {
     const BINARY_QUANTIZED: bool;
     const QDRANT_DISTANCE: qdrant_client::qdrant::Distance;
     type ArroyDistance: arroy::Distance;
+    type HannoyDistance: hannoy::Distance;
 
     fn name() -> &'static str;
     fn qdrant_quantization_config() -> quantization_config::Quantization;
@@ -28,12 +29,15 @@ pub trait Distance {
 }
 
 macro_rules! arroy_distance {
-    ($distance:ty => real: $real:ident, qdrant: $qdrant:ident, bq: $bq:expr) => {
+    ($distance:ident => real: $real:ident, qdrant: $qdrant:ident, bq: $bq:expr) => {
+        pub struct $distance {}
+
         impl Distance for $distance {
             const BINARY_QUANTIZED: bool = $bq;
             const QDRANT_DISTANCE: qdrant_client::qdrant::Distance =
                 qdrant_client::qdrant::Distance::$qdrant;
-            type ArroyDistance = $distance;
+            type ArroyDistance = arroy::distances::$distance;
+            type HannoyDistance = hannoy::distances::$distance;
 
             fn name() -> &'static str {
                 stringify!($distance)
@@ -161,7 +165,7 @@ impl fmt::Display for IndexingMetrics {
 
         // First step is to format all the lists in a vector of strings
 
-        let vectors = self.nb_vectors.iter().map(|v| format!("{}", v)).collect::<Vec<_>>();
+        let vectors = self.nb_vectors.iter().map(|v| format!("{v}")).collect::<Vec<_>>();
         let insertions = self
             .insert_durations
             .iter()
@@ -176,7 +180,7 @@ impl fmt::Display for IndexingMetrics {
                 format!("{:.2?}", build_end.duration_since(*build_start))
             })
             .collect::<Vec<_>>();
-        let trees = self.nb_trees.iter().map(|v| format!("{}", v)).collect::<Vec<_>>();
+        let trees = self.nb_trees.iter().map(|v| format!("{v}")).collect::<Vec<_>>();
         let db_size = self
             .database_size
             .iter()
@@ -209,7 +213,7 @@ impl fmt::Display for IndexingMetrics {
             }
             write!(f, "{nb_vectors:>max_length$}")?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         write!(f, "  => Insertions: ")?;
         for (idx, (insert, max_length)) in insertions.iter().zip(max_lengths.iter()).enumerate() {
@@ -218,7 +222,7 @@ impl fmt::Display for IndexingMetrics {
             }
             write!(f, "{insert:>max_length$}")?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         write!(f, "  => Builds:     ")?;
         for (idx, (build, max_length)) in builds.iter().zip(max_lengths.iter()).enumerate() {
@@ -227,7 +231,7 @@ impl fmt::Display for IndexingMetrics {
             }
             write!(f, "{build:>max_length$}")?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         write!(f, "  => Trees:      ")?;
         for (idx, (nb_trees, max_length)) in trees.iter().zip(max_lengths.iter()).enumerate() {
@@ -236,7 +240,7 @@ impl fmt::Display for IndexingMetrics {
             }
             write!(f, "{nb_trees:>max_length$}")?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         write!(f, "  => Db size:    ")?;
         for (idx, (database_size, max_length)) in db_size.iter().zip(max_lengths.iter()).enumerate()

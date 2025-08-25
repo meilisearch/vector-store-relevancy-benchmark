@@ -256,7 +256,6 @@ fn main() {
                             &points,
                             *number_of_chunks,
                             sleep_between_chunks,
-                            memory,
                             verbose,
                             |time_to_index, env, database| {
                                 hannoy_bench::run_scenarios(

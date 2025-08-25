@@ -18,7 +18,6 @@ pub fn prepare_and_run<D, F>(
     points: &[(u32, &[f32])],
     number_of_chunks: usize,
     sleep_between_chunks: usize,
-    memory: usize,
     verbose: bool,
     execute: F,
 ) where
@@ -42,7 +41,6 @@ pub fn prepare_and_run<D, F>(
         &env,
         database,
         dimensions,
-        memory,
         points,
         number_of_chunks,
         sleep_between_chunks,
@@ -142,7 +140,6 @@ fn load_into_hannoy<D: hannoy::Distance>(
     env: &heed::Env,
     database: Database<D>,
     dimensions: usize,
-    memory: usize,
     points: &[(ItemId, &[f32])],
     number_of_chunks: usize,
     sleep_between_chunks: usize,
@@ -169,7 +166,6 @@ fn load_into_hannoy<D: hannoy::Distance>(
         tracing::info!("Starts building the trees");
 
         let mut builder = writer.builder(rng);
-        builder.available_memory(memory);
         let progress = steppe::default::DefaultProgress::default();
         metrics.start_building();
         if verbose {
@@ -181,11 +177,6 @@ fn load_into_hannoy<D: hannoy::Distance>(
         metrics.end_building();
         progress.finish();
         wtxn.commit().unwrap();
-
-        let rtxn = env.read_txn().unwrap();
-        let reader = hannoy::Reader::open(&rtxn, 0, database).unwrap();
-        metrics.new_nb_trees(reader.n_trees());
-        drop(rtxn);
 
         nb_vectors += points.len();
         metrics.new_nb_vectors(nb_vectors);
